@@ -370,7 +370,8 @@
   function processData(rows, inventoryRows, suppliersRows, poRows) {
     if (!rows || rows.length < 2) { showError('No data found in Intakes sheet.'); return; }
 
-    const headers = rows[0].map(h => (h || '').trim().toLowerCase());
+    const hi = findHeaderRow(rows, ['type', 'name']);
+    const headers = rows[hi].map(h => (h || '').trim().toLowerCase());
 
     const typeIdx        = findCol(headers, ['type']);
     const nameIdx        = findCol(headers, ['name']);
@@ -392,7 +393,7 @@
     const suppMap     = parseSuppliers(suppliersRows);
     const poMap       = parsePurchaseOptions(poRows);
 
-    allRows = rows.slice(1)
+    allRows = rows.slice(hi + 1)
       .filter(row => SECTIONS.includes((row[typeIdx] || '').trim()))
       .map(row => {
         const name     = (row[nameIdx]       || '').trim();
@@ -427,7 +428,8 @@
   /* ── Inventory parsing ── */
   function parseInventory(rows) {
     if (!rows || rows.length < 2) return [];
-    const headers = rows[0].map(h => (h || '').trim().toLowerCase());
+    const hi = findHeaderRow(rows, ['date','name','qty','quantity']);
+    const headers = rows[hi].map(h => (h || '').trim().toLowerCase());
     const dateIdx = findCol(headers, ['date','logged','recorded','entered']);
     const nameIdx = findCol(headers, ['name','supplement','item','product']);
     const qtyIdx  = findCol(headers, ['qty','quantity','amount','count','units']);
@@ -436,7 +438,7 @@
 
     invColMap = { dateIdx, nameIdx, qtyIdx, srcIdx };
 
-    return rows.slice(1).flatMap(row => {
+    return rows.slice(hi + 1).flatMap(row => {
       const rawDate = (row[dateIdx] || '').trim();
       const name    = (row[nameIdx] || '').trim();
       const qty     = parseFloat((row[qtyIdx] || '').replace(/,/g, ''));
@@ -489,11 +491,12 @@
   function parseSuppliers(rows) {
     const map = new Map();
     if (!rows || rows.length < 2) return map;
-    const headers  = rows[0].map(h => (h || '').trim().toLowerCase());
+    const hi = findHeaderRow(rows, ['supplier','name','lead']);
+    const headers  = rows[hi].map(h => (h || '').trim().toLowerCase());
     const nameIdx  = findCol(headers, ['supplier','name','vendor','source','company','store']);
     const leadIdx  = findCol(headers, ['lead time','lead days','lead','days','shipping days','ship days','turnaround']);
     if (nameIdx < 0 || leadIdx < 0) return map;
-    for (const row of rows.slice(1)) {
+    for (const row of rows.slice(hi + 1)) {
       const name = (row[nameIdx] || '').trim();
       const lead = parseFloat((row[leadIdx] || '').replace(/,/g, ''));
       if (name && !isNaN(lead) && lead >= 0) map.set(name.toLowerCase(), lead);
