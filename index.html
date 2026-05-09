@@ -505,18 +505,19 @@
   function parsePurchaseOptions(rows) {
     const map = new Map();
     if (!rows || rows.length < 2) return map;
-    const headers  = rows[0].map(h => (h || '').trim().toLowerCase());
+    const hi      = findHeaderRow(rows, ['brand','product','quantity','qty']);
+    const headers = rows[hi].map(h => (h || '').trim().toLowerCase());
     const nameIdx  = findCol(headers, ['product','name','supplement','item']);
     const brandIdx = findCol(headers, ['brand']);
-    const qtyIdx   = findCol(headers, ['quantity','qty','count','units','per bottle','per container','size','capsules']);
+    const qtyIdx   = findCol(headers, ['quantity','qty','count','per bottle','per container','size','capsules']);
     if (nameIdx < 0 || qtyIdx < 0) return map;
-    for (const row of rows.slice(1)) {
+    for (const row of rows.slice(hi + 1)) {
       const name  = (row[nameIdx]  || '').trim().toLowerCase();
       const brand = brandIdx >= 0 ? (row[brandIdx] || '').trim().toLowerCase() : '';
       const qty   = parseFloat((row[qtyIdx] || '').replace(/,/g, ''));
       if (!name || isNaN(qty) || qty <= 0) continue;
       if (brand) map.set(`${name}|${brand}`, qty);
-      if (!map.has(name)) map.set(name, qty); // fallback without brand
+      if (!map.has(name)) map.set(name, qty);
     }
     return map;
   }
@@ -527,6 +528,14 @@
     if (b && poMap.has(`${n}|${b}`)) return poMap.get(`${n}|${b}`);
     if (poMap.has(n)) return poMap.get(n);
     return null;
+  }
+
+  function findHeaderRow(rows, terms) {
+    for (let i = 0; i < Math.min(5, rows.length); i++) {
+      const lower = (rows[i] || []).map(h => (h || '').toLowerCase());
+      if (terms.some(t => lower.some(h => h.includes(t)))) return i;
+    }
+    return 0;
   }
 
   /* ── Order By calculation ── */
