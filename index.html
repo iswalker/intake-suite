@@ -271,6 +271,7 @@
           <th>Supplement</th>
           <th>Primary Source</th>
           <th>Qty / Dose per Day</th>
+          <th>Current Stock</th>
           <th class="sortable" id="outOnHeader" onclick="toggleOutOnSort()">Out On</th>
           <th>Order By</th>
           <th>Qty Received</th>
@@ -388,13 +389,15 @@
         const qty      = qtyIdx       >= 0 ? (row[qtyIdx]       || '').trim() : '';
         const rawSupplier = nonAnnualIdx >= 0 ? (row[nonAnnualIdx] || '').trim() : '';
         const supplier = rawSupplier.includes(' - ') ? rawSupplier.split(' - ')[0].trim() : rawSupplier;
-        const outOn    = calcOutOn(name, qty, invEntries);
+        const outOn       = calcOutOn(name, qty, invEntries);
+        const currentStock = calcRawStock(name, qty, invEntries);
         return {
           section  : (row[typeIdx] || '').trim(),
           name,
           source   : sourceIdx >= 0 ? (row[sourceIdx] || '').trim() : '',
           qty,
           supplier,
+          currentStock,
           outOn,
           orderBy  : calcOrderBy(outOn, supplier, suppMap),
         };
@@ -432,8 +435,8 @@
     });
   }
 
-  /* ── Out On calculation ── */
-  function calcOutOn(suppName, qtyPerDay, invEntries) {
+  /* ── Stock / Out On calculations ── */
+  function calcRawStock(suppName, qtyPerDay, invEntries) {
     const dailyQty = parseFloat(qtyPerDay);
     if (!suppName || isNaN(dailyQty) || dailyQty <= 0) return null;
 
@@ -454,10 +457,16 @@
       lastDate = entry.date;
     }
 
-    const daysToToday = (today - lastDate) / 86400000;
-    stock -= dailyQty * daysToToday;
+    stock -= (today - lastDate) / 86400000 * dailyQty;
+    return stock;
+  }
 
+  function calcOutOn(suppName, qtyPerDay, invEntries) {
+    const stock = calcRawStock(suppName, qtyPerDay, invEntries);
+    if (stock === null) return null;
     if (stock <= 0) return 'depleted';
+    const dailyQty = parseFloat(qtyPerDay);
+    const today = new Date(); today.setHours(0, 0, 0, 0);
     const outDate = new Date(today);
     outDate.setDate(outDate.getDate() + Math.floor(stock / dailyQty));
     return outDate;
@@ -531,6 +540,7 @@
           <td class="name-cell">${safeName}</td>
           <td class="source-cell">${r.source ? esc(r.source) : '<span class="dash">—</span>'}</td>
           <td class="qty-cell">${r.qty ? esc(r.qty) : '<span class="dash">—</span>'}</td>
+          <td class="qty-cell">${r.currentStock !== null ? Math.max(0, Math.round(r.currentStock)) : '<span class="dash">—</span>'}</td>
           <td class="out-cell">${outHtml}</td>
           <td class="out-cell">${orderHtml}</td>
           <td><input type="number" min="1" step="1" class="qty-recv-input" id="qr-${i}" placeholder="qty"></td>
