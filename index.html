@@ -335,10 +335,11 @@
     try {
       const auth = { headers: { Authorization: `Bearer ${accessToken}` } };
       const base = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/`;
-      const [intakesResp, inventoryResp, suppliersResp] = await Promise.all([
+      const [intakesResp, inventoryResp, suppliersResp, poResp] = await Promise.all([
         fetch(base + encodeURIComponent('Intakes!A2:AZ'), auth),
         fetch(base + encodeURIComponent('Inventory!A1:AZ'), auth),
         fetch(base + encodeURIComponent('Suppliers!A1:AZ'), auth),
+        fetch(base + encodeURIComponent('Purchase Options!A1:AZ'), auth),
       ]);
       if (intakesResp.status === 401) {
         sessionStorage.removeItem('supp_token'); accessToken = null;
@@ -356,12 +357,17 @@
         const supJson = await suppliersResp.json();
         suppliersRows = supJson.values || [];
       }
-      processData(intakesJson.values || [], inventoryRows, suppliersRows);
+      let poRows = [];
+      if (poResp.ok) {
+        const poJson = await poResp.json();
+        poRows = poJson.values || [];
+      }
+      processData(intakesJson.values || [], inventoryRows, suppliersRows, poRows);
     } catch (e) { showError(e.message); }
   }
 
   /* ── Process ── */
-  function processData(rows, inventoryRows, suppliersRows) {
+  function processData(rows, inventoryRows, suppliersRows, poRows) {
     if (!rows || rows.length < 2) { showError('No data found in Intakes sheet.'); return; }
 
     const headers = rows[0].map(h => (h || '').trim().toLowerCase());
@@ -381,6 +387,7 @@
 
     const invEntries  = parseInventory(inventoryRows);
     const suppMap     = parseSuppliers(suppliersRows);
+    const poMap       = parsePurchaseOptions(poRows);
 
     allRows = rows.slice(1)
       .filter(row => SECTIONS.includes((row[typeIdx] || '').trim()))
@@ -389,8 +396,9 @@
         const qty      = qtyIdx       >= 0 ? (row[qtyIdx]       || '').trim() : '';
         const rawSupplier = nonAnnualIdx >= 0 ? (row[nonAnnualIdx] || '').trim() : '';
         const supplier = rawSupplier.includes(' - ') ? rawSupplier.split(' - ')[0].trim() : rawSupplier;
-        const outOn       = calcOutOn(name, qty, invEntries);
+        const outOn        = calcOutOn(name, qty, invEntries);
         const currentStock = calcRawStock(name, qty, invEntries);
+        const containerQty = getContainerQty(name, supplier, poMap);
         return {
           section  : (row[typeIdx] || '').trim(),
           name,
@@ -398,6 +406,7 @@
           qty,
           supplier,
           currentStock,
+          containerQty,
           outOn,
           orderBy  : calcOrderBy(outOn, supplier, suppMap),
         };
@@ -488,6 +497,34 @@
     return map;
   }
 
+  /* ── Purchase Options parsing ── */
+  function parsePurchaseOptions(rows) {
+    const map = new Map();
+    if (!rows || rows.length < 2) return map;
+    const headers = rows[0].map(h => (h || '').trim().toLowerCase());
+    const nameIdx = findCol(headers, ['product','name','supplement','item']);
+    const suppIdx = findCol(headers, ['supplier','vendor','source','brand','company','from']);
+    const qtyIdx  = findCol(headers, ['quantity','qty','count','units','per bottle','per container','size','capsules']);
+    if (nameIdx < 0 || qtyIdx < 0) return map;
+    for (const row of rows.slice(1)) {
+      const name = (row[nameIdx] || '').trim().toLowerCase();
+      const supp = suppIdx >= 0 ? (row[suppIdx] || '').trim().toLowerCase() : '';
+      const qty  = parseFloat((row[qtyIdx] || '').replace(/,/g, ''));
+      if (!name || isNaN(qty) || qty <= 0) continue;
+      if (supp) map.set(`${name}|${supp}`, qty);
+      if (!map.has(name)) map.set(name, qty); // fallback without supplier
+    }
+    return map;
+  }
+
+  function getContainerQty(name, supplier, poMap) {
+    const n = name.toLowerCase();
+    const s = supplier ? supplier.toLowerCase() : '';
+    if (s && poMap.has(`${n}|${s}`)) return poMap.get(`${n}|${s}`);
+    if (poMap.has(n)) return poMap.get(n);
+    return null;
+  }
+
   /* ── Order By calculation ── */
   function calcOrderBy(outOn, supplier, suppMap) {
     if (!supplier || !suppMap.has(supplier.toLowerCase())) return null;
@@ -540,7 +577,7 @@
           <td class="name-cell">${safeName}</td>
           <td class="source-cell">${r.source ? esc(r.source) : '<span class="dash">—</span>'}</td>
           <td class="qty-cell">${r.qty ? esc(r.qty) : '<span class="dash">—</span>'}</td>
-          <td class="qty-cell">${r.currentStock !== null ? Math.max(0, Math.round(r.currentStock)) : '<span class="dash">—</span>'}</td>
+          <td class="qty-cell">${fmtCurrentStock(r.currentStock, r.containerQty)}</td>
           <td class="out-cell">${outHtml}</td>
           <td class="out-cell">${orderHtml}</td>
           <td><input type="number" min="1" step="1" class="qty-recv-input" id="qr-${i}" placeholder="qty"></td>
@@ -590,6 +627,13 @@
         return `<button class="chip ${activeFilter===s?'active':''}" onclick="renderTable('${s}')">${s} (${n})</button>`;
       })
     ].join('');
+  }
+
+  function fmtCurrentStock(stock, containerQty) {
+    if (stock === null) return '<span class="dash">—</span>';
+    const s = Math.max(0, stock);
+    if (containerQty) return (s / containerQty).toFixed(1);
+    return Math.round(s);
   }
 
   function fmtOutOn(outOn, today) {
