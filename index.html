@@ -384,6 +384,9 @@
     const nonAnnualIdx   = findCol(headers, [
       'non-annual from','non annual from','non-annual','reorder from','order from','reorder source'
     ]);
+    const nonAnnualBrandIdx = findCol(headers, [
+      'non-annual brand','non annual brand','reorder brand','order brand','brand'
+    ]);
 
     const invEntries  = parseInventory(inventoryRows);
     const suppMap     = parseSuppliers(suppliersRows);
@@ -396,9 +399,10 @@
         const qty      = qtyIdx       >= 0 ? (row[qtyIdx]       || '').trim() : '';
         const rawSupplier = nonAnnualIdx >= 0 ? (row[nonAnnualIdx] || '').trim() : '';
         const supplier = rawSupplier.includes(' - ') ? rawSupplier.split(' - ')[0].trim() : rawSupplier;
+        const brand    = nonAnnualBrandIdx >= 0 ? (row[nonAnnualBrandIdx] || '').trim() : '';
         const outOn        = calcOutOn(name, qty, invEntries);
         const currentStock = calcRawStock(name, qty, invEntries);
-        const containerQty = getContainerQty(name, supplier, poMap);
+        const containerQty = getContainerQty(name, brand, poMap);
         return {
           section  : (row[typeIdx] || '').trim(),
           name,
@@ -501,26 +505,26 @@
   function parsePurchaseOptions(rows) {
     const map = new Map();
     if (!rows || rows.length < 2) return map;
-    const headers = rows[0].map(h => (h || '').trim().toLowerCase());
-    const nameIdx = findCol(headers, ['product','name','supplement','item']);
-    const suppIdx = findCol(headers, ['supplier','vendor','source','brand','company','from']);
-    const qtyIdx  = findCol(headers, ['quantity','qty','count','units','per bottle','per container','size','capsules']);
+    const headers  = rows[0].map(h => (h || '').trim().toLowerCase());
+    const nameIdx  = findCol(headers, ['product','name','supplement','item']);
+    const brandIdx = findCol(headers, ['brand']);
+    const qtyIdx   = findCol(headers, ['quantity','qty','count','units','per bottle','per container','size','capsules']);
     if (nameIdx < 0 || qtyIdx < 0) return map;
     for (const row of rows.slice(1)) {
-      const name = (row[nameIdx] || '').trim().toLowerCase();
-      const supp = suppIdx >= 0 ? (row[suppIdx] || '').trim().toLowerCase() : '';
-      const qty  = parseFloat((row[qtyIdx] || '').replace(/,/g, ''));
+      const name  = (row[nameIdx]  || '').trim().toLowerCase();
+      const brand = brandIdx >= 0 ? (row[brandIdx] || '').trim().toLowerCase() : '';
+      const qty   = parseFloat((row[qtyIdx] || '').replace(/,/g, ''));
       if (!name || isNaN(qty) || qty <= 0) continue;
-      if (supp) map.set(`${name}|${supp}`, qty);
-      if (!map.has(name)) map.set(name, qty); // fallback without supplier
+      if (brand) map.set(`${name}|${brand}`, qty);
+      if (!map.has(name)) map.set(name, qty); // fallback without brand
     }
     return map;
   }
 
-  function getContainerQty(name, supplier, poMap) {
+  function getContainerQty(name, brand, poMap) {
     const n = name.toLowerCase();
-    const s = supplier ? supplier.toLowerCase() : '';
-    if (s && poMap.has(`${n}|${s}`)) return poMap.get(`${n}|${s}`);
+    const b = brand ? brand.toLowerCase() : '';
+    if (b && poMap.has(`${n}|${b}`)) return poMap.get(`${n}|${b}`);
     if (poMap.has(n)) return poMap.get(n);
     return null;
   }
