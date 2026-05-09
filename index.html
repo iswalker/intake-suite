@@ -239,6 +239,7 @@
           <th>Primary Source</th>
           <th>Qty / Dose per Day</th>
           <th>Out On</th>
+          <th>Order By</th>
         </tr>
       </thead>
       <tbody id="tableBody"></tbody>
@@ -294,9 +295,10 @@
     try {
       const auth = { headers: { Authorization: `Bearer ${accessToken}` } };
       const base = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/`;
-      const [intakesResp, inventoryResp] = await Promise.all([
+      const [intakesResp, inventoryResp, suppliersResp] = await Promise.all([
         fetch(base + encodeURIComponent('Intakes!A2:AZ'), auth),
         fetch(base + encodeURIComponent('Inventory!A1:AZ'), auth),
+        fetch(base + encodeURIComponent('Suppliers!A1:AZ'), auth),
       ]);
       if (intakesResp.status === 401) {
         sessionStorage.removeItem('supp_token'); accessToken = null;
@@ -309,39 +311,52 @@
         const invJson = await inventoryResp.json();
         inventoryRows = invJson.values || [];
       }
-      processData(intakesJson.values || [], inventoryRows);
+      let suppliersRows = [];
+      if (suppliersResp.ok) {
+        const supJson = await suppliersResp.json();
+        suppliersRows = supJson.values || [];
+      }
+      processData(intakesJson.values || [], inventoryRows, suppliersRows);
     } catch (e) { showError(e.message); }
   }
 
   /* ── Process ── */
-  function processData(rows, inventoryRows) {
+  function processData(rows, inventoryRows, suppliersRows) {
     if (!rows || rows.length < 2) { showError('No data found in Intakes sheet.'); return; }
 
     const headers = rows[0].map(h => (h || '').trim().toLowerCase());
 
-    const typeIdx   = findCol(headers, ['type']);
-    const nameIdx   = findCol(headers, ['name']);
-    const sourceIdx = findCol(headers, [
+    const typeIdx        = findCol(headers, ['type']);
+    const nameIdx        = findCol(headers, ['name']);
+    const sourceIdx      = findCol(headers, [
       'purchased from','primary source','primary vendor','vendor','retailer','source','brand'
     ]);
-    const qtyIdx    = findCol(headers, [
+    const qtyIdx         = findCol(headers, [
       'qty per day','dose per day','daily dose','daily qty',
       'qty','dose','serving','capsules','amount','daily'
     ]);
+    const nonAnnualIdx   = findCol(headers, [
+      'non-annual from','non annual from','non-annual','reorder from','order from','reorder source'
+    ]);
 
-    const invEntries = parseInventory(inventoryRows);
+    const invEntries  = parseInventory(inventoryRows);
+    const suppMap     = parseSuppliers(suppliersRows);
 
     allRows = rows.slice(1)
       .filter(row => SECTIONS.includes((row[typeIdx] || '').trim()))
       .map(row => {
-        const name = (row[nameIdx] || '').trim();
-        const qty  = qtyIdx >= 0 ? (row[qtyIdx] || '').trim() : '';
+        const name     = (row[nameIdx]       || '').trim();
+        const qty      = qtyIdx       >= 0 ? (row[qtyIdx]       || '').trim() : '';
+        const supplier = nonAnnualIdx >= 0 ? (row[nonAnnualIdx] || '').trim() : '';
+        const outOn    = calcOutOn(name, qty, invEntries);
         return {
-          section : (row[typeIdx]   || '').trim(),
+          section  : (row[typeIdx] || '').trim(),
           name,
-          source  : sourceIdx >= 0 ? (row[sourceIdx] || '').trim() : '',
+          source   : sourceIdx >= 0 ? (row[sourceIdx] || '').trim() : '',
           qty,
-          outOn   : calcOutOn(name, qty, invEntries),
+          supplier,
+          outOn,
+          orderBy  : calcOrderBy(outOn, supplier, suppMap),
         };
       })
       .filter(r => r.name && r.name.toLowerCase() !== 'summary');
@@ -405,6 +420,33 @@
     return outDate;
   }
 
+  /* ── Suppliers parsing ── */
+  function parseSuppliers(rows) {
+    const map = new Map();
+    if (!rows || rows.length < 2) return map;
+    const headers  = rows[0].map(h => (h || '').trim().toLowerCase());
+    const nameIdx  = findCol(headers, ['supplier','name','vendor','source','company','store']);
+    const leadIdx  = findCol(headers, ['lead time','lead days','lead','days','shipping days','ship days','turnaround']);
+    if (nameIdx < 0 || leadIdx < 0) return map;
+    for (const row of rows.slice(1)) {
+      const name = (row[nameIdx] || '').trim();
+      const lead = parseFloat((row[leadIdx] || '').replace(/,/g, ''));
+      if (name && !isNaN(lead) && lead >= 0) map.set(name.toLowerCase(), lead);
+    }
+    return map;
+  }
+
+  /* ── Order By calculation ── */
+  function calcOrderBy(outOn, supplier, suppMap) {
+    if (!supplier || !suppMap.has(supplier.toLowerCase())) return null;
+    const leadDays = suppMap.get(supplier.toLowerCase());
+    if (outOn === 'depleted') return 'now';
+    if (!(outOn instanceof Date)) return null;
+    const orderDate = new Date(outOn);
+    orderDate.setDate(orderDate.getDate() - leadDays);
+    return orderDate;
+  }
+
   function findCol(headers, terms) {
     for (const t of terms) {
       const i = headers.findIndex(h => h.includes(t));
@@ -426,14 +468,16 @@
       document.getElementById('emptyState').style.display = 'none';
       const today = new Date(); today.setHours(0,0,0,0);
       tbody.innerHTML = rows.map(r => {
-        const key    = r.section.toLowerCase().replace(/\s+/g, '-');
-        const outHtml = fmtOutOn(r.outOn, today);
+        const key      = r.section.toLowerCase().replace(/\s+/g, '-');
+        const outHtml   = fmtOutOn(r.outOn, today);
+        const orderHtml = fmtOrderBy(r.orderBy, today);
         return `<tr>
           <td><span class="badge badge-${key}">${esc(r.section)}</span></td>
           <td class="name-cell">${esc(r.name)}</td>
           <td class="source-cell">${r.source ? esc(r.source) : '<span class="dash">—</span>'}</td>
           <td class="qty-cell">${r.qty ? esc(r.qty) : '<span class="dash">—</span>'}</td>
           <td class="out-cell">${outHtml}</td>
+          <td class="out-cell">${orderHtml}</td>
         </tr>`;
       }).join('');
     }
@@ -459,6 +503,16 @@
     if (outOn === 'depleted') return '<span class="out-danger">Out</span>';
     const daysLeft = Math.round((outOn - today) / 86400000);
     const label = outOn.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    if (daysLeft <= 0)  return `<span class="out-danger">${label}</span>`;
+    if (daysLeft <= 7)  return `<span class="out-warn">${label}</span>`;
+    return `<span class="out-ok">${label}</span>`;
+  }
+
+  function fmtOrderBy(orderBy, today) {
+    if (!orderBy) return '<span class="dash">—</span>';
+    if (orderBy === 'now') return '<span class="out-danger">Order Now</span>';
+    const daysLeft = Math.round((orderBy - today) / 86400000);
+    const label = orderBy.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     if (daysLeft <= 0)  return `<span class="out-danger">${label}</span>`;
     if (daysLeft <= 7)  return `<span class="out-warn">${label}</span>`;
     return `<span class="out-ok">${label}</span>`;
