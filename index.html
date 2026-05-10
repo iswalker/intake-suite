@@ -402,7 +402,8 @@
         const qty      = qtyIdx       >= 0 ? (row[qtyIdx]       || '').trim() : '';
         const rawSupplier = nonAnnualIdx >= 0 ? (row[nonAnnualIdx] || '').trim() : '';
         const supplier = rawSupplier.includes(' - ') ? rawSupplier.split(' - ')[0].trim() : rawSupplier;
-        const brand    = nonAnnualBrandIdx >= 0 ? (row[nonAnnualBrandIdx] || '').trim() : '';
+        const rawBrand = nonAnnualBrandIdx >= 0 ? (row[nonAnnualBrandIdx] || '').trim() : '';
+        const brand    = rawBrand.includes(' - ') ? rawBrand.split(' - ')[0].trim() : rawBrand;
         const outOn        = calcOutOn(name, qty, invEntries);
         const currentStock = calcRawStock(name, qty, invEntries);
         const containerQty = getContainerQty(name, brand, poMap);
