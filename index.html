@@ -9,13 +9,17 @@
   <script src="https://accounts.google.com/gsi/client" async></script>
   <style>
     :root {
-      --bg: #f3f4f6;
+      --bg: #f0ede8;
       --surface: #ffffff;
       --border: #e5e7eb;
-      --text: #111827;
+      --text: #1c1c2e;
       --muted: #6b7280;
-      --green: #166534;
-      --green-light: #dcfce7;
+      --primary: #5cbcb2;
+      --primary-dark: #3a9d94;
+      --primary-xdark: #1e5e59;
+      --primary-light: #dff5f3;
+      --ok: #059669;
+      --ok-light: #d1fae5;
       --blue: #1d4ed8;
       --blue-light: #dbeafe;
       --amber: #92400e;
@@ -37,33 +41,29 @@
 
     /* HEADER */
     .app-header {
-      background: var(--green);
+      background: #1a2b2b;
       color: #fff;
       padding: 16px 24px 14px;
       position: sticky;
       top: 0;
       z-index: 20;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 16px;
     }
     .app-title { font-size: 18px; font-weight: 700; }
-    .app-sub   { font-size: 12px; opacity: 0.72; margin-top: 2px; }
+    .app-title span { color: var(--primary); }
+    .app-sub   { font-size: 12px; opacity: 0.6; margin-top: 2px; }
     .header-right { display: flex; align-items: center; gap: 10px; }
-    .user-pill {
-      display: flex; align-items: center; gap: 7px;
-      background: rgba(255,255,255,0.15);
-      padding: 5px 12px; border-radius: 99px; font-size: 12px;
-    }
     .sign-out-btn {
       background: transparent;
-      border: 1px solid rgba(255,255,255,0.4);
+      border: 1px solid rgba(255,255,255,0.35);
       color: #fff; padding: 4px 10px; border-radius: 6px;
       font-size: 11px; cursor: pointer; transition: background 0.12s;
     }
-    .sign-out-btn:hover { background: rgba(255,255,255,0.15); }
+    .sign-out-btn:hover { background: rgba(255,255,255,0.12); }
 
     /* SIGN-IN */
     .center-view {
@@ -83,7 +83,7 @@
     .sign-in-card p  { color: var(--muted); margin-bottom: 28px; font-size: 14px; }
     .sign-in-btn {
       display: inline-flex; align-items: center; justify-content: center; gap: 10px;
-      background: var(--green); color: #fff;
+      background: var(--primary); color: #fff;
       border: none; padding: 12px 28px; border-radius: 8px;
       font-size: 15px; font-weight: 600; cursor: pointer;
       width: 100%; transition: opacity 0.12s;
@@ -94,7 +94,7 @@
     .spinner {
       width: 36px; height: 36px;
       border: 3px solid var(--border);
-      border-top-color: var(--green);
+      border-top-color: var(--primary);
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
       margin-bottom: 16px;
@@ -113,13 +113,39 @@
       padding: 8px 20px; border-radius: 6px; cursor: pointer; font-size: 13px;
     }
 
+    /* TAB NAV */
+    .tab-nav {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      display: flex;
+      gap: 0;
+      position: sticky;
+      top: 60px;
+      z-index: 15;
+    }
+    .tab-btn {
+      padding: 11px 20px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: all 0.12s;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { color: var(--primary-xdark); border-bottom-color: var(--primary); font-weight: 600; }
+
     /* CONTROLS */
     .controls {
       background: var(--surface);
       border-bottom: 1px solid var(--border);
       padding: 10px 24px;
       display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-      position: sticky; top: 60px; z-index: 10;
+      position: sticky; top: 104px; z-index: 10;
     }
     .chips { display: flex; gap: 6px; flex-wrap: wrap; }
     .chip {
@@ -130,13 +156,13 @@
       white-space: nowrap;
     }
     .chip:hover { border-color: var(--muted); color: var(--text); }
-    .chip.active { background: var(--green); color: #fff; border-color: var(--green); }
+    .chip.active { background: var(--primary); color: #fff; border-color: var(--primary); }
     .count-label { font-size: 12px; color: var(--muted); }
     .filter-input {
       padding: 5px 10px; border: 1.5px solid var(--border); border-radius: 6px;
       font-size: 13px; background: var(--bg); color: var(--text); width: 200px;
     }
-    .filter-input:focus { outline: none; border-color: var(--green); }
+    .filter-input:focus { outline: none; border-color: var(--primary); }
     .reset-btn {
       margin-left: auto;
       background: transparent; border: 1.5px solid var(--border);
@@ -168,23 +194,23 @@
       vertical-align: middle;
     }
     tr:last-child td { border-bottom: none; }
-    tr:hover td { background: #f9fafb; }
+    tr:hover td { background: #faf9f7; }
 
     .badge {
       display: inline-block; padding: 2px 8px; border-radius: 99px;
       font-size: 11px; font-weight: 600; white-space: nowrap;
     }
-    .badge-protocol                    { background: var(--blue-light);   color: var(--blue); }
-    .badge-core                        { background: var(--green-light);  color: var(--green); }
-    .badge-medical                     { background: var(--amber-light);  color: var(--amber); }
-    .badge-personal-care-interventions { background: var(--purple-light); color: var(--purple); }
+    .badge-protocol                    { background: var(--blue-light);    color: var(--blue); }
+    .badge-core                        { background: var(--primary-light); color: var(--primary-xdark); }
+    .badge-medical                     { background: var(--amber-light);   color: var(--amber); }
+    .badge-personal-care-interventions { background: var(--purple-light);  color: var(--purple); }
     .badge-default                     { background: #f3f4f6; color: var(--muted); }
 
     .name-cell   { font-weight: 500; }
     .source-cell { color: var(--muted); font-size: 13px; }
     .qty-cell    { font-size: 13px; }
     .out-cell    { font-size: 13px; white-space: nowrap; }
-    .out-ok      { color: var(--green); }
+    .out-ok      { color: var(--ok); }
     .out-warn    { color: var(--amber); font-weight: 600; }
     .out-danger  { color: #dc2626; font-weight: 600; }
     .dash        { color: #d1d5db; }
@@ -193,17 +219,17 @@
       border-radius: 6px; font-size: 13px; text-align: center;
       background: var(--bg); color: var(--text);
     }
-    .qty-recv-input:focus { outline: none; border-color: var(--green); }
+    .qty-recv-input:focus { outline: none; border-color: var(--primary); }
     .qty-recv-input.error { border-color: #dc2626; }
     .row-log-btn {
       padding: 4px 12px; border-radius: 6px; border: none;
-      background: var(--green); color: #fff;
+      background: var(--primary); color: #fff;
       font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s;
       white-space: nowrap;
     }
     .row-log-btn:hover  { opacity: 0.85; }
     .row-log-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .row-log-btn.done   { background: #166534; }
+    .row-log-btn.done   { background: var(--primary-dark); }
 
     .empty-state {
       text-align: center; padding: 48px 24px; color: var(--muted); font-size: 14px;
@@ -213,11 +239,240 @@
       font-size: 11px; color: #9ca3af;
     }
 
+    /* BOARD */
+    .board-toolbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .board-filter-label { font-size: 13px; font-weight: 500; color: var(--muted); }
+    .board-filter-select {
+      padding: 5px 10px;
+      border: 1.5px solid var(--border);
+      border-radius: 6px;
+      font-size: 13px;
+      background: var(--bg);
+      color: var(--text);
+      min-width: 200px;
+    }
+    .board-filter-select:focus { outline: none; border-color: var(--primary); }
+    .board-wrap {
+      padding: 20px 24px;
+      overflow-x: auto;
+      min-height: calc(100vh - 180px);
+    }
+    .board {
+      display: flex;
+      gap: 14px;
+      min-width: max-content;
+      align-items: flex-start;
+    }
+    .board-col {
+      width: 268px;
+      flex-shrink: 0;
+      background: #e8e5e0;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+    }
+    .board-col-head {
+      padding: 13px 14px 10px;
+      border-bottom: 1px solid rgba(0,0,0,0.07);
+    }
+    .board-col-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--text);
+    }
+    .board-col-meta {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+    .board-col-total {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--primary-xdark);
+    }
+    .board-col-body {
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex: 1;
+    }
+
+    /* Inventory cards */
+    .inv-card {
+      background: var(--surface);
+      border-radius: 7px;
+      padding: 9px 11px;
+      border: 1px solid var(--border);
+    }
+    .inv-card-name { font-weight: 500; font-size: 13px; color: var(--text); }
+    .inv-card-stock { color: var(--muted); font-size: 12px; margin-top: 1px; }
+    .inv-card-out { font-size: 11px; margin-top: 2px; }
+
+    /* Order group */
+    .order-group {
+      background: var(--surface);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .order-group-head {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 10px;
+      background: var(--primary-light);
+      border-bottom: 1px solid #c8ede9;
+    }
+    .order-group-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--primary-xdark);
+      flex: 1;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .order-group-total {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--primary-xdark);
+      white-space: nowrap;
+    }
+    .order-group-del {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1;
+      padding: 0 1px;
+      flex-shrink: 0;
+    }
+    .order-group-del:hover { color: #dc2626; }
+    .order-group-items { padding: 0; }
+
+    /* Item card */
+    .item-card {
+      padding: 9px 11px;
+      border-bottom: 1px solid #f3f4f6;
+      font-size: 13px;
+    }
+    .item-card:last-child { border-bottom: none; }
+    .item-row1 {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+    .item-name {
+      font-weight: 600;
+      flex: 1;
+      min-width: 0;
+      font-size: 12px;
+      color: var(--text);
+    }
+    .item-recur-badge {
+      font-size: 10px;
+      background: #e0f0ff;
+      color: #1d4ed8;
+      border-radius: 99px;
+      padding: 1px 6px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .item-assign-sel {
+      font-size: 11px;
+      color: var(--muted);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 2px 5px;
+      cursor: pointer;
+      max-width: 100px;
+    }
+    .item-assign-sel:focus { outline: none; border-color: var(--primary); }
+    .item-row2 {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .item-qty-input {
+      width: 50px;
+      padding: 3px 6px;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      font-size: 12px;
+      text-align: center;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .item-qty-input:focus { outline: none; border-color: var(--primary); }
+    .item-price-info { font-size: 12px; color: var(--muted); }
+    .item-ext-price { font-size: 12px; font-weight: 700; color: var(--text); }
+    .item-row3 {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 5px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .item-recur-input {
+      width: 38px;
+      padding: 2px 4px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 11px;
+      text-align: center;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .item-recur-input:focus { outline: none; border-color: var(--primary); }
+
+    /* Ungrouped wrapper & add-group btn */
+    .ungrouped-section-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+      padding: 2px 2px 4px;
+    }
+    .add-group-btn {
+      padding: 7px 10px;
+      border: 1.5px dashed #c4bfb8;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 12px;
+      cursor: pointer;
+      width: 100%;
+      text-align: center;
+      transition: all 0.12s;
+      margin-top: 2px;
+    }
+    .add-group-btn:hover { border-color: var(--primary); color: var(--primary-xdark); }
+
+    .board-empty { color: var(--muted); font-size: 12px; text-align: center; padding: 18px 0; }
+
     @media (max-width: 600px) {
       .table-wrap { padding: 12px; }
       th, td { padding: 9px 10px; }
       .sign-in-card { padding: 28px 20px; }
-      .controls { top: 58px; }
+      .tab-nav { top: 58px; }
+      .controls { top: 102px; }
       .filter-input { width: 130px; }
     }
   </style>
@@ -226,7 +481,7 @@
 
 <header class="app-header">
   <div>
-    <div class="app-title">Supplement Protocol</div>
+    <div class="app-title">Supplement <span>Protocol</span></div>
     <div class="app-sub">Protocol · Core · Medical · Personal Care</div>
   </div>
   <div class="header-right" id="headerRight" style="display:none">
@@ -259,32 +514,53 @@
 </div>
 
 <div id="dataView" style="display:none">
-  <div class="controls">
-    <input type="text" id="filterInput" class="filter-input" placeholder="Filter supplements…" oninput="setFilter(this.value)">
-    <div class="chips" id="filterChips"></div>
-    <div class="count-label" id="countLabel"></div>
-    <button class="reset-btn" id="resetBtn" style="display:none" onclick="resetView()">✕ Reset</button>
+  <div class="tab-nav">
+    <button class="tab-btn active" id="tab-protocol" onclick="switchTab('protocol')">Protocol</button>
+    <button class="tab-btn" id="tab-orders" onclick="switchTab('orders')">Orders</button>
   </div>
-  <div class="table-wrap">
-    <table id="suppTable">
-      <thead>
-        <tr>
-          <th>Section</th>
-          <th>Supplement</th>
-          <th>Primary Source</th>
-          <th>Qty / Dose per Day</th>
-          <th>Current Stock</th>
-          <th class="sortable" id="outOnHeader" onclick="toggleOutOnSort()">Out On</th>
-          <th>Order By</th>
-          <th>Qty Received</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody id="tableBody"></tbody>
-    </table>
-    <div id="emptyState" class="empty-state" style="display:none">No supplements found.</div>
+
+  <!-- Protocol tab -->
+  <div id="protocolView">
+    <div class="controls">
+      <input type="text" id="filterInput" class="filter-input" placeholder="Filter supplements…" oninput="setFilter(this.value)">
+      <div class="chips" id="filterChips"></div>
+      <div class="count-label" id="countLabel"></div>
+      <button class="reset-btn" id="resetBtn" style="display:none" onclick="resetView()">✕ Reset</button>
+    </div>
+    <div class="table-wrap">
+      <table id="suppTable">
+        <thead>
+          <tr>
+            <th>Section</th>
+            <th>Supplement</th>
+            <th>Primary Source</th>
+            <th>Qty / Dose per Day</th>
+            <th>Current Stock</th>
+            <th class="sortable" id="outOnHeader" onclick="toggleOutOnSort()">Out On</th>
+            <th>Order By</th>
+            <th>Qty Received</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+      <div id="emptyState" class="empty-state" style="display:none">No supplements found.</div>
+    </div>
+    <div class="footer" id="footerTs"></div>
   </div>
-  <div class="footer" id="footerTs"></div>
+
+  <!-- Orders tab -->
+  <div id="ordersView" style="display:none">
+    <div class="board-toolbar">
+      <span class="board-filter-label">Filter:</span>
+      <select id="boardFilterSel" class="board-filter-select" onchange="setBoardFilter(this.value)">
+        <option value="">All supplements</option>
+      </select>
+    </div>
+    <div class="board-wrap">
+      <div id="boardContent" class="board"></div>
+    </div>
+  </div>
 </div>
 
 
@@ -299,7 +575,9 @@
   let activeFilter = 'all';
   let invColMap    = null;
   let filterText   = '';
-  let outOnSort    = 0; // 0 = none, 1 = asc (soonest first)
+  let outOnSort    = 0;
+  let activeTab    = 'protocol';
+  let boardFilter  = '';
 
   /* ── OAuth ── */
   function initGSI() {
@@ -350,20 +628,11 @@
       if (!intakesResp.ok) throw new Error(`Sheets API error ${intakesResp.status}`);
       const intakesJson = await intakesResp.json();
       let inventoryRows = [];
-      if (inventoryResp.ok) {
-        const invJson = await inventoryResp.json();
-        inventoryRows = invJson.values || [];
-      }
+      if (inventoryResp.ok) { const j = await inventoryResp.json(); inventoryRows = j.values || []; }
       let suppliersRows = [];
-      if (suppliersResp.ok) {
-        const supJson = await suppliersResp.json();
-        suppliersRows = supJson.values || [];
-      }
+      if (suppliersResp.ok) { const j = await suppliersResp.json(); suppliersRows = j.values || []; }
       let poRows = [];
-      if (poResp.ok) {
-        const poJson = await poResp.json();
-        poRows = poJson.values || [];
-      }
+      if (poResp.ok) { const j = await poResp.json(); poRows = j.values || []; }
       processData(intakesJson.values || [], inventoryRows, suppliersRows, poRows);
     } catch (e) { showError(e.message); }
   }
@@ -398,23 +667,27 @@
     allRows = rows.slice(hi + 1)
       .filter(row => SECTIONS.includes((row[typeIdx] || '').trim()))
       .map(row => {
-        const name     = (row[nameIdx]       || '').trim();
-        const qty      = qtyIdx       >= 0 ? (row[qtyIdx]       || '').trim() : '';
+        const name        = (row[nameIdx]       || '').trim();
+        const qty         = qtyIdx >= 0 ? (row[qtyIdx] || '').trim() : '';
         const rawSupplier = nonAnnualIdx >= 0 ? (row[nonAnnualIdx] || '').trim() : '';
-        const supplier = rawSupplier.includes(' - ') ? rawSupplier.split(' - ')[0].trim() : rawSupplier;
-        const rawBrand = nonAnnualBrandIdx >= 0 ? (row[nonAnnualBrandIdx] || '').trim() : '';
-        const brand    = rawBrand.includes(' - ') ? rawBrand.split(' - ')[0].trim() : rawBrand;
+        const supplier    = rawSupplier.includes(' - ') ? rawSupplier.split(' - ')[0].trim() : rawSupplier;
+        const rawBrand    = nonAnnualBrandIdx >= 0 ? (row[nonAnnualBrandIdx] || '').trim() : '';
+        const brand       = rawBrand.includes(' - ') ? rawBrand.split(' - ')[0].trim() : rawBrand;
         const outOn        = calcOutOn(name, qty, invEntries);
         const currentStock = calcRawStock(name, qty, invEntries);
-        const containerQty = getContainerQty(name, brand, poMap);
+        const poEntry      = getPOEntry(name, brand, poMap);
+        const containerQty = poEntry ? poEntry.qty : null;
+        const listPrice    = poEntry ? poEntry.price : null;
         return {
           section  : (row[typeIdx] || '').trim(),
           name,
           source   : sourceIdx >= 0 ? (row[sourceIdx] || '').trim() : '',
           qty,
           supplier,
+          brand,
           currentStock,
           containerQty,
+          listPrice,
           outOn,
           orderBy  : calcOrderBy(outOn, supplier, suppMap),
         };
@@ -426,6 +699,7 @@
     showView('data');
     document.getElementById('footerTs').textContent =
       'Last loaded: ' + new Date().toLocaleString();
+    if (activeTab === 'orders') renderBoard();
   }
 
   /* ── Inventory parsing ── */
@@ -511,29 +785,37 @@
   function parsePurchaseOptions(rows) {
     const map = new Map();
     if (!rows || rows.length < 2) return map;
-    const hi      = findHeaderRow(rows, ['brand','product','quantity','qty']);
+    const hi      = findHeaderRow(rows, ['brand','product','quantity','qty','price']);
     const headers = rows[hi].map(h => (h || '').trim().toLowerCase());
     const nameIdx  = findCol(headers, ['product','name','supplement','item']);
     const brandIdx = findCol(headers, ['brand']);
     const qtyIdx   = findCol(headers, ['quantity','qty','count','per bottle','per container','size','capsules']);
+    const priceIdx = findCol(headers, ['list price','price','cost','unit price','retail']);
     if (nameIdx < 0 || qtyIdx < 0) return map;
     for (const row of rows.slice(hi + 1)) {
       const name  = (row[nameIdx]  || '').trim().toLowerCase();
-      const brand = brandIdx >= 0 ? (row[brandIdx] || '').trim().toLowerCase() : '';
-      const qty   = parseFloat((row[qtyIdx] || '').replace(/,/g, ''));
+      const brand = brandIdx  >= 0 ? (row[brandIdx]  || '').trim().toLowerCase() : '';
+      const qty   = parseFloat((row[qtyIdx]   || '').replace(/,/g, ''));
+      const price = priceIdx >= 0 ? parseFloat((row[priceIdx] || '').replace(/[$,]/g, '')) : NaN;
       if (!name || isNaN(qty) || qty <= 0) continue;
-      if (brand) map.set(`${name}|${brand}`, qty);
-      if (!map.has(name)) map.set(name, qty);
+      const entry = { qty, price: isNaN(price) ? null : price };
+      if (brand) map.set(`${name}|${brand}`, entry);
+      if (!map.has(name)) map.set(name, entry);
     }
     return map;
   }
 
-  function getContainerQty(name, brand, poMap) {
-    const n = name.toLowerCase();
-    const b = brand ? brand.toLowerCase() : '';
+  function getPOEntry(name, brand, poMap) {
+    const n = (name || '').toLowerCase();
+    const b = (brand || '').toLowerCase();
     if (b && poMap.has(`${n}|${b}`)) return poMap.get(`${n}|${b}`);
     if (poMap.has(n)) return poMap.get(n);
     return null;
+  }
+
+  function getContainerQty(name, brand, poMap) {
+    const e = getPOEntry(name, brand, poMap);
+    return e ? e.qty : null;
   }
 
   function findHeaderRow(rows, terms) {
@@ -563,7 +845,17 @@
     return -1;
   }
 
-  /* ── Render ── */
+  /* ── Tab switching ── */
+  function switchTab(tab) {
+    activeTab = tab;
+    document.getElementById('tab-protocol').classList.toggle('active', tab === 'protocol');
+    document.getElementById('tab-orders').classList.toggle('active', tab === 'orders');
+    document.getElementById('protocolView').style.display = tab === 'protocol' ? '' : 'none';
+    document.getElementById('ordersView').style.display   = tab === 'orders'   ? '' : 'none';
+    if (tab === 'orders') renderBoard();
+  }
+
+  /* ── Render Protocol table ── */
   function renderTable(filter) {
     activeFilter = filter;
     let rows = filter === 'all' ? allRows : allRows.filter(r => r.section === filter);
@@ -676,7 +968,7 @@
   }
 
   function esc(s) {
-    return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
   function showView(v) {
@@ -755,6 +1047,280 @@
       throw new Error('Session expired.');
     }
     if (!resp.ok) throw new Error(`Sheets API error ${resp.status}`);
+  }
+
+  /* ══════════════════════════════════════════
+     ORDERS BOARD
+  ══════════════════════════════════════════ */
+
+  /* localStorage helpers */
+  function getOrderState()        { try { return JSON.parse(localStorage.getItem('is_orderState')  || '{}'); } catch { return {}; } }
+  function getOrderGroups()       { try { return JSON.parse(localStorage.getItem('is_orderGroups') || '{}'); } catch { return {}; } }
+  function getItemGroupMap()      { try { return JSON.parse(localStorage.getItem('is_igMap')       || '{}'); } catch { return {}; } }
+  function saveOrderState(s)      { localStorage.setItem('is_orderState',  JSON.stringify(s)); }
+  function saveOrderGroups(g)     { localStorage.setItem('is_orderGroups', JSON.stringify(g)); }
+  function saveItemGroupMap(m)    { localStorage.setItem('is_igMap',       JSON.stringify(m)); }
+
+  /* Board month helpers */
+  function getBoardMonths() {
+    const today = new Date();
+    return Array.from({ length: 6 }, (_, i) => {
+      const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
+      return { year: d.getFullYear(), month: d.getMonth() };
+    });
+  }
+
+  function mKey(year, month)   { return `${year}-${month}`; }
+  function mLabel(year, month) { return new Date(year, month, 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }); }
+
+  /* Resolve which board month a row's orderBy falls in */
+  function baseOrderMonth(row) {
+    if (!row.orderBy) return null;
+    const today = new Date(); today.setHours(0,0,0,0);
+    let d;
+    if (row.orderBy === 'now')                         d = today;
+    else if (row.orderBy instanceof Date && row.orderBy <= today) d = today;
+    else if (row.orderBy instanceof Date)              d = row.orderBy;
+    else return null;
+    return { year: d.getFullYear(), month: d.getMonth() };
+  }
+
+  /* Expand recurrence: returns [{mKey, row, isRecurring}] within the 6-month window */
+  function expandBoardItems() {
+    const months  = getBoardMonths();
+    const winStart = new Date(months[0].year, months[0].month, 1);
+    const winEnd   = new Date(months[months.length-1].year, months[months.length-1].month + 1, 0);
+    const orderState = getOrderState();
+    const result = [];
+
+    for (const row of allRows) {
+      const base = baseOrderMonth(row);
+      if (!base) continue;
+
+      const s = orderState[row.name] || {};
+      const every = parseInt(s.everyMonths) || 0;
+      const baseDate = new Date(base.year, base.month, 1);
+
+      if (every > 0) {
+        let cur = new Date(baseDate);
+        while (cur > winStart) cur = new Date(cur.getFullYear(), cur.getMonth() - every, 1);
+        while (cur < winStart) cur = new Date(cur.getFullYear(), cur.getMonth() + every, 1);
+        while (cur <= winEnd) {
+          const isFirst = cur.getFullYear() === base.year && cur.getMonth() === base.month;
+          result.push({ mKey: mKey(cur.getFullYear(), cur.getMonth()), row, isRecurring: !isFirst });
+          cur = new Date(cur.getFullYear(), cur.getMonth() + every, 1);
+        }
+      } else {
+        if (baseDate >= winStart && baseDate <= winEnd) {
+          result.push({ mKey: mKey(base.year, base.month), row, isRecurring: false });
+        }
+      }
+    }
+    return result;
+  }
+
+  /* Render item card HTML */
+  function renderItemCard(row, mk, orderState, igMap, groups) {
+    const s           = orderState[row.name] || {};
+    const qty         = parseInt(s.qty) || 1;
+    const every       = parseInt(s.everyMonths) || '';
+    const price       = row.listPrice;
+    const extPrice    = (price && qty) ? qty * price : null;
+    const safeName    = esc(row.name);
+    const escMk       = esc(mk);
+
+    let assignHtml = '';
+    if (groups.length > 0) {
+      const curGroup = igMap[`${row.name}|${mk}`] || '';
+      const opts = groups.map(g =>
+        `<option value="${esc(g.id)}" ${curGroup === g.id ? 'selected' : ''}>${esc(g.label)}</option>`
+      ).join('');
+      assignHtml = `<select class="item-assign-sel" title="Assign to order"
+        onchange="assignGroup(${JSON.stringify(row.name)},${JSON.stringify(mk)},this.value)">
+        <option value="">Unassigned</option>${opts}
+      </select>`;
+    }
+
+    return `<div class="item-card">
+      <div class="item-row1">
+        <span class="item-name">${safeName}</span>
+        ${assignHtml}
+      </div>
+      <div class="item-row2">
+        <input type="number" min="1" step="1" value="${qty}" class="item-qty-input" title="Qty to order"
+          onchange="saveItemField(${JSON.stringify(row.name)},'qty',this.value)" />
+        ${price ? `<span class="item-price-info">× $${price.toFixed(2)}</span>` : ''}
+        ${extPrice ? `<span class="item-ext-price">= $${extPrice.toFixed(2)}</span>` : ''}
+      </div>
+      <div class="item-row3">
+        Repeat every
+        <input type="number" min="1" max="24" step="1" value="${every}" placeholder="—" class="item-recur-input"
+          onchange="saveItemField(${JSON.stringify(row.name)},'everyMonths',this.value)" title="Recurrence interval in months" />
+        mo
+      </div>
+    </div>`;
+  }
+
+  /* Main board renderer */
+  function renderBoard() {
+    const orderState = getOrderState();
+    const groups     = getOrderGroups();
+    const igMap      = getItemGroupMap();
+    const allItems   = expandBoardItems();
+    const months     = getBoardMonths();
+    const filt       = boardFilter.toLowerCase();
+
+    /* Update supplement filter dropdown */
+    const sel = document.getElementById('boardFilterSel');
+    if (sel) {
+      const cur = sel.value;
+      sel.innerHTML = '<option value="">All supplements</option>' +
+        allRows.map(r => `<option value="${esc(r.name)}" ${r.name === cur ? 'selected' : ''}>${esc(r.name)}</option>`).join('');
+    }
+
+    let html = '';
+
+    /* ── Current Inventory column ── */
+    const invRows = filt ? allRows.filter(r => r.name.toLowerCase().includes(filt)) : allRows;
+    const today   = new Date(); today.setHours(0,0,0,0);
+
+    html += `<div class="board-col">
+      <div class="board-col-head">
+        <div class="board-col-title">Current Inventory</div>
+        <div class="board-col-meta">${invRows.filter(r => r.currentStock !== null).length} tracked</div>
+      </div>
+      <div class="board-col-body">`;
+
+    for (const row of invRows) {
+      if (row.currentStock === null) continue;
+      const s   = Math.max(0, row.currentStock);
+      const disp = row.containerQty ? (s / row.containerQty).toFixed(1) + ' bottles' : Math.round(s) + ' units';
+      const outHtml = fmtOutOn(row.outOn, today);
+      html += `<div class="inv-card">
+        <div class="inv-card-name">${esc(row.name)}</div>
+        <div class="inv-card-stock">${disp}</div>
+        <div class="inv-card-out">${outHtml}</div>
+      </div>`;
+    }
+    html += '</div></div>';
+
+    /* ── Month columns ── */
+    for (const { year, month } of months) {
+      const mk         = mKey(year, month);
+      const colItems   = allItems.filter(i => i.mKey === mk && (!filt || i.row.name.toLowerCase().includes(filt)));
+      const colGroups  = groups[mk] || [];
+
+      /* Month total */
+      let total = 0;
+      for (const { row } of colItems) {
+        const s   = orderState[row.name] || {};
+        const qty = parseInt(s.qty) || 1;
+        if (row.listPrice) total += qty * row.listPrice;
+      }
+
+      html += `<div class="board-col">
+        <div class="board-col-head">
+          <div class="board-col-title">${mLabel(year, month)}</div>
+          <div class="board-col-meta">${total > 0 ? `<span class="board-col-total">$${total.toFixed(2)}</span>` : colItems.length + ' items'}</div>
+        </div>
+        <div class="board-col-body">`;
+
+      /* Render named order groups */
+      for (const grp of colGroups) {
+        const grpItems = colItems.filter(i => igMap[`${i.row.name}|${mk}`] === grp.id);
+        let grpTotal = 0;
+        grpItems.forEach(({ row }) => {
+          const s   = orderState[row.name] || {};
+          const qty = parseInt(s.qty) || 1;
+          if (row.listPrice) grpTotal += qty * row.listPrice;
+        });
+
+        html += `<div class="order-group">
+          <div class="order-group-head">
+            <span class="order-group-label">${esc(grp.label)}</span>
+            ${grpTotal > 0 ? `<span class="order-group-total">$${grpTotal.toFixed(2)}</span>` : ''}
+            <button class="order-group-del" onclick="deleteGroup(${JSON.stringify(mk)},${JSON.stringify(grp.id)})" title="Delete group">×</button>
+          </div>
+          <div class="order-group-items">`;
+        for (const { row, isRecurring } of grpItems) {
+          html += renderItemCard(row, mk, orderState, igMap, colGroups);
+        }
+        if (grpItems.length === 0) {
+          html += `<div style="padding:8px 11px;font-size:11px;color:var(--muted)">No items assigned</div>`;
+        }
+        html += '</div></div>';
+      }
+
+      /* Ungrouped items */
+      const ungrouped = colItems.filter(i => !igMap[`${i.row.name}|${mk}`]);
+      if (ungrouped.length > 0) {
+        if (colGroups.length > 0) {
+          html += `<div class="ungrouped-section-label">Unassigned</div>`;
+        }
+        for (const { row, isRecurring } of ungrouped) {
+          html += `<div class="order-group"><div class="order-group-items">` +
+            renderItemCard(row, mk, orderState, igMap, colGroups) +
+            `</div></div>`;
+        }
+      }
+
+      if (colItems.length === 0) {
+        html += `<div class="board-empty">No items this month</div>`;
+      }
+
+      html += `<button class="add-group-btn" onclick="addGroup(${JSON.stringify(mk)})">+ New Order Group</button>`;
+      html += '</div></div>';
+    }
+
+    document.getElementById('boardContent').innerHTML = html;
+  }
+
+  /* Board actions */
+  function saveItemField(name, key, value) {
+    const s = getOrderState();
+    if (!s[name]) s[name] = {};
+    if (value === '' || value === null) delete s[name][key];
+    else s[name][key] = value;
+    saveOrderState(s);
+    renderBoard();
+  }
+
+  function addGroup(mk) {
+    const label = prompt('Name this order group:', 'New Order');
+    if (!label || !label.trim()) return;
+    const g = getOrderGroups();
+    if (!g[mk]) g[mk] = [];
+    const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+    g[mk].push({ id, label: label.trim() });
+    saveOrderGroups(g);
+    renderBoard();
+  }
+
+  function deleteGroup(mk, groupId) {
+    if (!confirm('Delete this order group?')) return;
+    const g = getOrderGroups();
+    if (g[mk]) {
+      g[mk] = g[mk].filter(x => x.id !== groupId);
+      if (g[mk].length === 0) delete g[mk];
+    }
+    saveOrderGroups(g);
+    const m = getItemGroupMap();
+    for (const k of Object.keys(m)) { if (m[k] === groupId) delete m[k]; }
+    saveItemGroupMap(m);
+    renderBoard();
+  }
+
+  function assignGroup(name, mk, groupId) {
+    const m = getItemGroupMap();
+    const k = `${name}|${mk}`;
+    if (groupId) m[k] = groupId; else delete m[k];
+    saveItemGroupMap(m);
+    renderBoard();
+  }
+
+  function setBoardFilter(val) {
+    boardFilter = val;
+    renderBoard();
   }
 
   (function waitGSI() {
